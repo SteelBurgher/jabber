@@ -16,9 +16,11 @@
     "express-session": "~1.0.2",
     "fluent-ffmpeg": "^2.0.1",
     "gridfs-stream": "^1.1.1",
+    "kurento-client": "Kurento/kurento-client-js",
     "jsonwebtoken": "^0.3.0",
     "lodash": "~2.4.1",
     "method-override": "~1.0.0",
+    "minimist": "^1.1.1",
     "mongoose": "~3.8.8",
     "morgan": "~1.0.0",
     "node-uuid": "^1.4.3",
@@ -30,9 +32,11 @@
     "serve-favicon": "~2.0.1",
     "socket.io": "^1.0.6",
     "socket.io-stream": "^0.8.0",
-    "socketio-jwt": "^2.0.2"
+    "socketio-jwt": "^2.0.2",
+    "ws": "~0.7.2"
   },
   "devDependencies": {
+    "bower": "^1.4.1",
     "connect-livereload": "~0.4.0",
     "grunt": "~0.4.4",
     "grunt-angular-templates": "^0.5.4",

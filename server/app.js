@@ -12,9 +12,10 @@ var config = require('./config/environment');
 	require('./config/express')(app);
 	require('./routes')(app);
 
-// Socket IO Setup
+// Socket Setup
 	var socketio = require('socket.io')(server)
 	require('./config/socketio')(socketio);
+	require('./config/callRoom.js')(server);
 
 // Database Setup
 	var mongoose = require('mongoose');
