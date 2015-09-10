@@ -20,7 +20,13 @@
     "raphael": "~2.1.4",
     "snap": "*",
     "Snap.svg": "~0.4.1",
-    "github-fork-ribbon-css": "~0.1.1"
+    "github-fork-ribbon-css": "~0.1.1",
+    "adapter.js": "*",
+    "bootstrap": "~3.3.0",
+    "draggabilly": "~1.2.4",
+    "demo-console": "master",
+    "ekko-lightbox": "~3.3.0",
+    "kurento-utils": "master"
   },
   "devDependencies": {
     "angular-mocks": ">=1.2.*",
