@@ -1,5 +1,6 @@
 //  ENTRY TO THE APPLICATION //
 'use strict';
+
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 var config = require('./config/environment');
 
@@ -12,11 +13,12 @@ var config = require('./config/environment');
 	require('./config/express')(app);
 	require('./routes')(app);
 
+
 // Socket Setup
 	var socketio = require('socket.io')(server)
 	require('./config/socketio')(socketio);
 	require('./config/callRoom.js')(server);
-
+  
 // Database Setup
 	var mongoose = require('mongoose');
 	mongoose.connect(config.mongo.uri, config.mongo.options);

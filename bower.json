@@ -18,7 +18,6 @@
     "eventEmitter": "~4.2.11",
     "recordrtc": "*",
     "raphael": "~2.1.4",
-    "snap": "*",
     "Snap.svg": "~0.4.1",
     "github-fork-ribbon-css": "~0.1.1",
     "adapter.js": "*",
