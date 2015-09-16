@@ -8,13 +8,13 @@ var PartnershipSchema = new Schema({
   requester: {type: Schema.ObjectId, ref: 'User'},
   recipient: {type: Schema.ObjectId, ref: 'User'},
   messages: [{type: Schema.ObjectId, ref: 'Message'}],
-  room_id: {type: String, default: null},
   confirmed: {type: Boolean, default: false}
 });
 
 PartnershipSchema.methods = {
   sendConfirmation: function(text) {
     var partnership = this; // to save context for updating later
+    
     Message.create({
       type: 'requestAccept',
       from: partnership.recipient,

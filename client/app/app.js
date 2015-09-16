@@ -13,7 +13,7 @@ angular.module('jabbrApp', [
   'ui.bootstrap'
 ])
   .config(function ($stateProvider, $urlRouterProvider, $locationProvider,
-                    $httpProvider,$sceProvider, $sceDelegateProvider,JabbrSocketProvider) {
+                    $httpProvider,$sceProvider, $sceDelegateProvider) {
     $urlRouterProvider.when('/dashboard', '/dashboard/overview', '/room', '/room/:roomId');
     $urlRouterProvider.otherwise('/');
 

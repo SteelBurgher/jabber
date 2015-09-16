@@ -15,8 +15,6 @@ var config = require('./config/environment');
 
 
 // Socket Setup
-	var socketio = require('socket.io')(server)
-	require('./config/socketio')(socketio);
 	require('./config/callRoom.js')(server);
   
 // Database Setup

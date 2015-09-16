@@ -14,4 +14,7 @@ var router = express.Router();
 router.use('/local', require('./local'));
 router.use('/facebook', require('./facebook'));
 
+// authentication route for going into a room 
+router.use('/room', require('./room'));
+
 module.exports = router;

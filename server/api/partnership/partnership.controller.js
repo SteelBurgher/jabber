@@ -52,10 +52,12 @@ exports.show = function(req, res) {
 
 // Creates a new partnership in the DB.
 exports.create = function(req, res) {
+
   // first convert strings into mongoose Object id's
   var fromId = mongoose.Types.ObjectId(req.body.requester);
   var toId = mongoose.Types.ObjectId(req.body.recipient);
-  // first create a new message that gets sent to request recipient
+
+  // create new message that gets sent to request recipient
   Message.create({
     from: fromId,
     to: toId,
@@ -64,28 +66,36 @@ exports.create = function(req, res) {
     timestamp: Date.now()
   }, function(err, message) {
     if(err) { return handleError(res, err); }
-    // now create the partnership
+
+    // create the partnership
     Partnership.create({
         requester: fromId,
         recipient: toId,
         messages: [message._id]
       }, function(err, partnership) {
         if(err) { return handleError(res, err); }
+
         // now update the message to reference the partnership
         message._partnership = partnership._id;
+
         message.save(function (err) {
           if (err) return handleError(err);
-          // now push the corresponding user id to the appropriate waiting array of each user
+
+          // add recipient's id to requester's waitingOn list
           User.findByIdAndUpdate(partnership.requester,
             {$push : {waitingOn: partnership.recipient}},
             {safe: true},
             function(err, user) {
               if(err) { handleError(res, err); }
+
+              // add requester's id to recipient's notRespondedTo list
               User.findByIdAndUpdate(partnership.recipient,
                 {$push : {notRespondedTo: partnership.requester }},
                 {safe: true},
                 function(err, user) {
                   if(err) { handleError(res, err); }
+
+                  // return partnership object to client
                   return res.json(201, partnership);
               });
           });
@@ -118,14 +128,14 @@ exports.update = function(req, res) {
 // confirms a pending partnership
 exports.confirm = function(req, res) {
   var text = req.body.text; 
-  console.log(text);// text of the accept message
+  
   Partnership.findById(req.params.id, function (err, partnership) {
     if (err) { return handleError(res, err); }
     if(!partnership) { return res.send(404); }
+    
     // only confirm if unconfirmed 
     if(!partnership.confirmed) {
       partnership.confirmed = true;
-      partnership.room_id = uuid.v4();
       partnership.save(function (err, partnership) {
         if (err) { return handleError(res, err); }
         partnership.sendConfirmation(text); // sends a confirmation message to the requester

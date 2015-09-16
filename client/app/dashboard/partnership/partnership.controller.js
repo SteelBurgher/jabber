@@ -1,17 +1,15 @@
 'use strict';
 
 angular.module('jabbrApp')
-  .controller('PartnershipCtrl', function ($scope, $stateParams, Partnership, JabbrSocket, $state, Message) {
+  .controller('PartnershipCtrl', function ($scope, $stateParams, Partnership, $state, Message, $http) {
     
     $scope.messageFormOpen = false;
     $scope.messageText = '';
     $scope.submitted = false;
-    $scope.socket = JabbrSocket;
     $scope.partnership = Partnership.get({id: $stateParams.partnershipId}, function(partnership){
       console.log(partnership);
     });
 
-    console.log(JabbrSocket)
     $scope.sortMessage = function(message) {  // used to sort the messages by date
       var date = new Date(message.timestamp);
       return date;
@@ -42,13 +40,17 @@ angular.module('jabbrApp')
     
 
     $scope.enterRoom = function(room_id) {
-      $scope.socket.emit('checkRoom', {roomid: room_id});
-      $scope.socket.on('openRoom', function(data){
-        console.log("Allowed to enter room with id " + data.roomid);
-        console.log("This should match above: " + room_id);
-        $state.go('roomId',{roomId: room_id});
-      });
-      $scope.socket.on('roomError', function(data){});
+
+      $http.post('/auth/room', {
+          partnership_id: $stateParams.partnershipId
+        }).
+        success(function(data) {
+          $state.go('roomId',{partnerId: data.partnerId});
+        }).
+        error(function(err) {
+          console.log('error entering room');
+        });
+
     };
 
 
