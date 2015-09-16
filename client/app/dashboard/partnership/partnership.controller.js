@@ -11,6 +11,7 @@ angular.module('jabbrApp')
       console.log(partnership);
     });
 
+    console.log(JabbrSocket)
     $scope.sortMessage = function(message) {  // used to sort the messages by date
       var date = new Date(message.timestamp);
       return date;

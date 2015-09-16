@@ -10,9 +10,14 @@ var ss = require('socket.io-stream');
 var saveRecording = require('../api/recording/recording');
 var sendRecording = require('../api/recording/sendRecording')
 
-module.exports = function (socketio) {
+module.exports = function (server) {
 
-  socketio.on('connection', function (socket) {
+  var wss = new ws.Server({
+    server : server,
+    path : '/checkRoom'
+  });
+
+  wss.on('connection', function (socket) {
     console.log("Client has Connected");
     socket.emit('firstContact');
     var currentRoom, id;
@@ -26,7 +31,7 @@ module.exports = function (socketio) {
       delete rooms[currentRoom][rooms[currentRoom].indexOf(socket)];
      rooms[currentRoom].forEach(function (socket) {
         if (socket) {
-          socket.emit('peer.disconnected', { id: id });
+          socket.send('peer.disconnected', { id: id });
         }
       });
     });
