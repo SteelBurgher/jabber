@@ -3,39 +3,12 @@
 angular.module('jabbrApp')
   .controller('RoomCtrl', function ($sce, $location, $stateParams, $scope, $state, Auth, Session, $http) {
 
+console.log($stateParams.partnerId);
 var ws = new WebSocket('ws://' + location.host + '/one2one');
 var videoInput;
 var videoOutput;
 var webRtcPeer;
 
-var registerName = null;
-const NOT_REGISTERED = 0;
-const REGISTERING = 1;
-const REGISTERED = 2;
-var registerState = null
-
-function setRegisterState(nextState) {
-  switch (nextState) {
-  case NOT_REGISTERED:
-    $('#register').attr('disabled', false);
-    $('#call').attr('disabled', true);
-    $('#terminate').attr('disabled', true);
-    break;
-
-  case REGISTERING:
-    $('#register').attr('disabled', true);
-    break;
-
-  case REGISTERED:
-    $('#register').attr('disabled', true);
-    setCallState(NO_CALL);
-    break;
-
-  default:
-    return;
-  }
-  registerState = nextState;
-}
 
 var callState = null;
 const NO_CALL = 0;
@@ -50,7 +23,6 @@ function setCallState(nextState) {
   case NO_CALL:
     $('#call').attr('disabled', false);
     $('#terminate').attr('disabled', true);
-    $('#play').attr('disabled', true);
     break;
   case PROCESSING_CALL:
     $('#call').attr('disabled', true);
@@ -59,22 +31,18 @@ function setCallState(nextState) {
   case IN_CALL:
     $('#call').attr('disabled', true);
     $('#terminate').attr('disabled', false);
-    $('#play').attr('disabled', true);
     break;
   case DISABLED:
     $('#call').attr('disabled', true);
     $('#terminate').attr('disabled', true);
-    $('#play').attr('disabled', true);
     break;
   case IN_PLAY:
     $('#call').attr('disabled', true);
     $('#terminate').attr('disabled', false);
-    $('#play').attr('disabled', true);
     break;
   case POST_CALL:
     $('#call').attr('disabled', false);
     $('#terminate').attr('disabled', true);
-    $('#play').attr('disabled', false);
     break;
   default:
     return;
@@ -82,24 +50,16 @@ function setCallState(nextState) {
   callState = nextState;
 }
 
-  console = new Console();
-  setRegisterState(NOT_REGISTERED);
+  
   var drag = new Draggabilly(document.getElementById('videoSmall'));
   videoInput = document.getElementById('videoInput');
   videoOutput = document.getElementById('videoOutput');
-  document.getElementById('name').focus();
 
-  document.getElementById('register').addEventListener('click', function() {
-    register();
-  });
   document.getElementById('call').addEventListener('click', function() {
     call();
   });
   document.getElementById('terminate').addEventListener('click', function() {
     stop();
-  });
-  document.getElementById('play').addEventListener('click', function() {
-    play();
   });
 
 window.onbeforeunload = function() {
@@ -136,6 +96,13 @@ ws.onmessage = function(message) {
   case 'playEnd':
     playEnd(parsedMessage);
     break;
+  case 'open':
+    sendMessage({
+      id: 'setUserId',
+      name: $scope.currentUser.name,
+      userId: $scope.currentUser._id
+    });
+    break;
   default:
     console.error('Unrecognized message', parsedMessage);
   }
@@ -143,9 +110,9 @@ ws.onmessage = function(message) {
 
 function resgisterResponse(message) {
   if (message.response == 'accepted') {
-    setRegisterState(REGISTERED);
+    setCallState(NO_CALL);
+    console.log("Successfully registered");
   } else {
-    setRegisterState(NOT_REGISTERED);
     var errorMessage = message.message ? message.message
         : 'Unknown reason for register rejection.';
     console.log(errorMessage);
@@ -196,10 +163,12 @@ function playResponse(message) {
 
 function incomingCall(message) {
   // If bussy just reject without disturbing user
+
   if (callState != NO_CALL) {
+    
     var response = {
       id : 'incomingCallResponse',
-      from : message.from,
+      from : $scope.currentUser._id,
       callResponse : 'reject',
       message : 'bussy'
 
@@ -208,7 +177,7 @@ function incomingCall(message) {
   }
 
   setCallState(PROCESSING_CALL);
-  if (confirm('User ' + message.from
+  if (confirm('User ' + message.fromName
       + ' is calling you. Do you accept the call?')) {
     showSpinner(videoInput, videoOutput);
 
@@ -259,8 +228,6 @@ function register() {
     return;
   }
 
-  setRegisterState(REGISTERING);
-
   var message = {
     id : 'register',
     name : name
@@ -270,12 +237,6 @@ function register() {
 }
 
 function play() {
-  var peer = document.getElementById('peer').value;
-  if (peer == '') {
-    window.alert("You must insert the name of the user recording to be played (field 'Peer')");
-    document.getElementById('peer').focus();
-    return;
-  }
 
   document.getElementById('videoSmall').style.display = 'none';
   setCallState(DISABLED);
@@ -311,10 +272,6 @@ function playEnd() {
 }
 
 function call() {
-  if (document.getElementById('peer').value == '') {
-    window.alert("You must specify the peer name");
-    return;
-  }
 
   setCallState(PROCESSING_CALL);
 
@@ -340,8 +297,8 @@ function call() {
       }
       var message = {
         id : 'call',
-        from : document.getElementById('name').value,
-        to : document.getElementById('peer').value,
+        from : $scope.currentUser._id,
+        to : $stateParams.partnerId,
         sdpOffer : offerSdp
       };
       sendMessage(message);
@@ -409,7 +366,6 @@ function hideSpinner() {
   }
 }
 
-console.log(callState);
 /**
  * Lightbox utility (to display media pipeline image in a modal dialog)
  */

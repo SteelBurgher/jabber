@@ -6,7 +6,7 @@ angular.module('jabbrApp')
     $scope.messages = []; 
     $scope.submitted = false; // for showing errors appropriately in the form 
     $scope.responseText = '';
-
+    
     User.getSuggestedPartners(function(res) {
       $scope.suggestedPartners = res.partners;
       console.log($scope.suggestedPartners[0])

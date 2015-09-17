@@ -368,15 +368,17 @@ module.exports = function (server) {
     // upon connection with a client, a unique session ID is created for this socket connection
     // the sessionID can be accessed from within the 'error', 'close', and 'message' event handlers
     wss.on('connection', function(ws) {
-        var sessionId = nextUniqueId();
-        console.log('Connection received with sessionId ' + sessionId);
-        console.log('in room');
+        
+        var sessionId;
 
         // informs of a connection error
         ws.on('error', function(error) {
             console.log('Connection ' + sessionId + ' error');
             stop(sessionId);
         });
+
+
+    
 
         ws.on('close', function() {
             console.log('Connection ' + sessionId + ' closed');
@@ -389,9 +391,6 @@ module.exports = function (server) {
             console.log('Connection ' + sessionId + ' received message ', message);
 
             switch (message.id) {
-            case 'register':
-                register(sessionId, message.name, ws);
-                break;
 
             case 'call':
                 call(sessionId, message.to, message.from, message.sdpOffer);
@@ -421,7 +420,13 @@ module.exports = function (server) {
                 startPlaying(sessionId);
                 break;
 
+            case 'setUserId':
+                sessionId = message.userId;
+                register(sessionId, message.name, ws);
+                break;
+            
             default:
+
                 ws.send(JSON.stringify({
                     id : 'error',
                     message : 'Invalid message ' + message
@@ -430,6 +435,11 @@ module.exports = function (server) {
             }
 
         });
+
+        // sends open message to client so client knows to send unique userid
+        ws.send(JSON.stringify({
+            id: 'open'
+        }));
     });
 
     function play(sessionId, message) {
@@ -485,7 +495,7 @@ module.exports = function (server) {
         delete pipelines[sessionId]; // session deleted from local storage
         pipeline.release(); // pipeline released (practically deleted) in Kurento Media server 
         var stopperUser = userRegistry.getById(sessionId); // gets the user object from registry of user doing the stopping
-        var stoppedUser = userRegistry.getByName(stopperUser.peer); // gets peer from registry
+        var stoppedUser = userRegistry.getById(stopperUser.peer); // gets peer from registry
         stopperUser.peer = null; // sets peer to null
 
         if (stoppedUser) {
@@ -524,10 +534,10 @@ module.exports = function (server) {
         }
 
         var callee = userRegistry.getById(calleeId);
-        if (!from || !userRegistry.getByName(from)) {
+        if (!from || !userRegistry.getById(from)) {
             return onError(null, 'unknown from = ' + from);
         }
-        var caller = userRegistry.getByName(from);
+        var caller = userRegistry.getById(from);
 
         if (callResponse === 'accept') {
             var pipeline = new CallMediaPipeline();
@@ -581,14 +591,15 @@ module.exports = function (server) {
 
         var caller = userRegistry.getById(callerId);
         var rejectCause = 'User ' + to + ' is not registered';
-        if (userRegistry.getByName(to)) {
-            var callee = userRegistry.getByName(to);
+        if (userRegistry.getById(to)) {
+            var callee = userRegistry.getById(to);
             caller.sdpOffer = sdpOffer
             callee.peer = from;
             caller.peer = to;
             var message = {
                 id: 'incomingCall',
-                from: from
+                from: from,
+                fromName: userRegistry.getById(from).name
             };
             try{
                 return callee.sendMessage(message);
@@ -613,8 +624,8 @@ module.exports = function (server) {
             return onError("empty user name");
         }
 
-        if (userRegistry.getByName(name)) {
-            return onError("User " + name + " is already registered");
+        if (userRegistry.getById(id)) {
+            return onError("User " + id + " is already registered");
         }
 
         userRegistry.register(new UserSession(id, name, ws));

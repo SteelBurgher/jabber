@@ -45,6 +45,7 @@ angular.module('jabbrApp')
           partnership_id: $stateParams.partnershipId
         }).
         success(function(data) {
+          console.log(data);
           $state.go('roomId',{partnerId: data.partnerId});
         }).
         error(function(err) {

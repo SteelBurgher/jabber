@@ -8,6 +8,9 @@ angular.module('jabbrApp')
         parent: 'dashboard',
         // parent: 'base',
         templateUrl: 'app/dashboard/room/views/room.html',
+        params: {
+          partnerId: undefined
+        },
         controller: 'RoomCtrl',
         onExit: function(VideoStream, Room) {
           //console.log(VideoStream.userMedia)
