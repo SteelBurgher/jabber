@@ -15,7 +15,8 @@ var config = require('./config/environment');
 
 
 // Socket Setup
-	require('./config/callRoom.js')(server);
+	require('./sockets/room.js')(server);
+	require('./sockets/play.js')(server);
   
 // Database Setup
 	var mongoose = require('mongoose');

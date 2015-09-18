@@ -18,6 +18,8 @@ router.get('/:id', auth.isAuthenticated(), controller.show);
 router.put('/:id/password', auth.isAuthenticated(), controller.changePassword);
 router.get('/:id/partners', auth.isAuthenticated(), controller.getPartners);
 router.get('/:id/requests', auth.isAuthenticated(), controller.getRequests);
+router.get('/:id/recordings', auth.isAuthenticated(), controller.getRecordings);
+router.get('/:id/')
 router.get('/:id', auth.isAuthenticated(), controller.show);
 router.post('/', controller.create);
 

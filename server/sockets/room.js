@@ -4,6 +4,9 @@ var ws = require('ws');
 var minimist = require('minimist');
 var url = require('url');
 var kurento = require('kurento-client');
+var Recording = require('../api/recording/recording.model');
+var mongoose = require('mongoose');
+var config = require('../config/environment');
 
 var argv = minimist(process.argv.slice(2), {
   default: {
@@ -19,14 +22,7 @@ var argv = minimist(process.argv.slice(2), {
 var kurentoClient = null;
 var userRegistry = new UserRegistry();
 var pipelines = {};
-var playPipelines = {};
 var candidatesQueue = {};
-var idCounter = 0;
-
-function nextUniqueId() {
-    idCounter++;
-    return idCounter.toString();
-}
 
 /*
  * Definition of helper classes
@@ -139,90 +135,100 @@ CallMediaPipeline.prototype.createPipeline = function(callerId, calleeId, ws, ca
                         }));
                     });
                     
-                    
-                    pipeline.create('RecorderEndpoint', {uri: 'file:///tmp/recording.webm'}, function(error, callRecorder) {
-                        
-                        if (error) {
-                            pipeline.release();
-                            return callback(error);
-                        }
-                        
-                        pipeline.create('Composite', function(error, composite) {
-
+                    Recording.create({
+                        date: Date.now(), 
+                        creator: mongoose.Types.ObjectId(callerId),
+                        partner: mongoose.Types.ObjectId(calleeId)
+                        }, function(err, recording) {
+                        if(err) { return handleError(res, err); }
+                        console.log('file://' + path.join(config.root, '/server/api/recording/uploads/' + recording._id + '.webm'));
+                        pipeline.create('RecorderEndpoint', {
+                            uri: 'file://' + path.join(config.root, '/server/api/recording/uploads/' + recording._id + '.webm'),
+                            mediaProfile: 'WEBM_AUDIO_ONLY'
+                            }, function(error, callRecorder) {
+                            
                             if (error) {
-                              pipeline.release();
-                              return callback(error);
+                                pipeline.release();
+                                return callback(error);
                             }
+                            
+                            pipeline.create('Composite', function(error, composite) {
 
-                            composite.createHubPort(function(error, callerHubPort) {
-
-                                if(error) {
-                                    pipeline.release();
-                                    return callback(error);
+                                if (error) {
+                                  pipeline.release();
+                                  return callback(error);
                                 }
 
-                                composite.createHubPort(function(error, calleeHubPort) {
+                                composite.createHubPort(function(error, callerHubPort) {
 
                                     if(error) {
                                         pipeline.release();
                                         return callback(error);
                                     }
 
-                                    callerWebRtcEndpoint.connect(calleeWebRtcEndpoint, function(error) {
-                                        if (error) {
+                                    composite.createHubPort(function(error, calleeHubPort) {
+
+                                        if(error) {
                                             pipeline.release();
                                             return callback(error);
                                         }
 
-                                        calleeWebRtcEndpoint.connect(callerWebRtcEndpoint, function(error) {
+                                        callerWebRtcEndpoint.connect(calleeWebRtcEndpoint, function(error) {
                                             if (error) {
                                                 pipeline.release();
                                                 return callback(error);
                                             }
 
-                                            callerWebRtcEndpoint.connect(callerHubPort, function(error) {
+                                            calleeWebRtcEndpoint.connect(callerWebRtcEndpoint, function(error) {
                                                 if (error) {
                                                     pipeline.release();
                                                     return callback(error);
                                                 }
 
-                                                calleeWebRtcEndpoint.connect(calleeHubPort, function(error) {
+                                                callerWebRtcEndpoint.connect(callerHubPort, function(error) {
                                                     if (error) {
                                                         pipeline.release();
                                                         return callback(error);
                                                     }
 
-                                                    calleeHubPort.connect(callRecorder, function(error) {
-                                                        if(error) {
+                                                    calleeWebRtcEndpoint.connect(calleeHubPort, function(error) {
+                                                        if (error) {
                                                             pipeline.release();
                                                             return callback(error);
                                                         }
 
-                                                        callerHubPort.connect(callRecorder, function(error) {
+                                                        calleeHubPort.connect(callRecorder, function(error) {
                                                             if(error) {
                                                                 pipeline.release();
                                                                 return callback(error);
                                                             }
-                                                            self.pipeline = pipeline;
-                                                            self.webRtcEndpoint[callerId] = callerWebRtcEndpoint;
-                                                            self.webRtcEndpoint[calleeId] = calleeWebRtcEndpoint;
-                                                            self.callRecorder = callRecorder;
-                                                            callback(null);
-                                                        })
 
-                                                    })
-                                                                
+                                                            callerHubPort.connect(callRecorder, function(error) {
+                                                                if(error) {
+                                                                    pipeline.release();
+                                                                    return callback(error);
+                                                                }
+                                                                self.pipeline = pipeline;
+                                                                self.webRtcEndpoint[callerId] = callerWebRtcEndpoint;
+                                                                self.webRtcEndpoint[calleeId] = calleeWebRtcEndpoint;
+                                                                self.callRecorder = callRecorder;
+                                                                callback(null);
+                                                            })
+
+                                                        })
+                                                                    
+                                                    });
                                                 });
                                             });
                                         });
-                                    });
 
+                                    });
+                                
                                 });
-                            
+
                             });
 
                         });
-
                     });
                 });
             });

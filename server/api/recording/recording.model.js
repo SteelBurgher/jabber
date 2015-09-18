@@ -5,9 +5,9 @@ var mongoose = require('mongoose'),
 
 var RecordingSchema = new Schema({
   filename: String,
-  creator: Object,
-  partner: Object,
-  date: Number
+  creator: {type: Schema.ObjectId, ref: 'User'},
+  partner: {type: Schema.ObjectId, ref: 'User'},
+  date: {type: Date}
 });
 
 module.exports = mongoose.model('Recording', RecordingSchema);

@@ -11,15 +11,6 @@ angular.module('jabbrApp')
         params: {
           partnerId: undefined
         },
-        controller: 'RoomCtrl',
-        onExit: function(VideoStream, Room) {
-          //console.log(VideoStream.userMedia)
-          if(VideoStream.userMedia){
-            VideoStream.userMedia.stop();
-            VideoStream.userMedia = "";
-            console.log("Exiting Room")
-          }
-          Room.leaveRoom();  // reset Room service variables
-        }
+        controller: 'RoomCtrl'
       })
   });

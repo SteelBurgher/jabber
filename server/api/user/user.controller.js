@@ -204,6 +204,18 @@ exports.getRequests = function(req, res, next) {
   })
 }
 
+exports.getRecordings = function(req, res, next) {
+  console.log(req.params.id, req.user._id);
+  if (req.params.id !== req.user._id.toString()) { return res.send(403); }
+
+  var userId = mongoose.Types.ObjectId(req.user._id);
+
+  Recording.find({ $or:[ {'creator':userId}, {'partner':userId}]}, function(err, recordings) {
+    if(err) { return handleError(res, err)};
+    res.json(recordings);
+  })
+}
+
 /**
  * Gets user recordings
  */
