@@ -6,7 +6,6 @@ angular.module('jabbrApp')
       .state('roomId', {
         url: '/room',
         parent: 'dashboard',
-        // parent: 'base',
         templateUrl: 'app/dashboard/room/views/room.html',
         params: {
           partnerId: undefined

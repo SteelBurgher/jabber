@@ -1,44 +1,39 @@
 <div class="container">
+  <div class="row">
+    <div class="col-md-5">
       <div class="page-header">
-        <h1>Tutorial 4: Video Call 1 to 1 with WebRTC</h1>
+        <h2>Meetup with {{partnerProfile.name}}</h2>
+        <div class="row text-center video-dash">
+          <div class="col-md-4">
+            <img src="{{partnerProfile.pic}}" alt="">
+          </div>
+          <div class="col-md-4">
+            <a id="call" href="#" class="btn btn-success">
+              <span class="glyphicon glyphicon-play"></span> Call</a>
+          </div>
+          <div class="col-md-4 text-right">
+            <a id="record" href="#" class="btn btn-primary">
+              <span class="glyphicon glyphicon-record"></span> Record</a>
+          </div>
+        </div>
       </div>
-      <div class="row">
-        <div class="col-md-5">
-          <label class="control-label" for="name">Name</label>
-          <div class="row">
-            <div class="col-md-6">
-              <a id="call" href="#" class="btn btn-success">
-                <span class="glyphicon glyphicon-play"></span> Call</a>
-            </div>
-            <div class="col-md-6 text-right">
-              <a id="record" href="#" class="btn btn-primary">
-                <span class="glyphicon glyphicon-record"></span> Record</a>
-            </div>
-          </div>
-          <br/>
-          <br/>
-          <label class="control-label" for="peer">Peer</label>
-          <div class="row">
-            <div class="col-md-5">
-            </div>
-            <div class="col-md-7 text-right">
-              <a id="terminate" href="#" class="btn btn-danger">
-                <span class="glyphicon glyphicon-stop"></span> Stop</a>
-            </div>
-          </div>
-          <br/>
-          <label class="control-label" for="console">Console</label><br><br>
-          <div id="console" class="democonsole">
-            <ul></ul>
-          </div>
-        </div>
-        <div class="col-md-7">
-          <div id="videoBig">
-            <video id="videoOutput" autoplay width="640px" height="480px" poster="images/webrtc.png"></video>
-          </div>
-          <div id="videoSmall">
-            <video id="videoInput" autoplay width="240px" height="180px" poster="images/webrtc.png"></video>
-          </div>
-        </div>
+      <br/>
+      <br/>
+      <br/>
+      <label class="control-label" for="console">Console</label>
+      <br>
+      <br>
+      <div id="console" class="democonsole">
+        <ul></ul>
       </div>
     </div>
+    <div class="col-md-7">
+      <div id="videoBig">
+        <video id="videoOutput" autoplay width="640px" height="480px" poster="images/webrtc.png"></video>
+      </div>
+      <div id="videoSmall">
+        <video id="videoInput" autoplay width="240px" height="180px" poster="images/webrtc.png"></video>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,10 +1,16 @@
 'use strict';
 
 angular.module('jabbrApp')
-  .controller('RoomCtrl', function ($sce, $location, $stateParams, $scope, $state, Auth, Session, $http) {
+  .controller('RoomCtrl', function ($sce, $location, $stateParams, $scope, $state, Auth, Session, $http, User) {
 
-console.log($stateParams.partnerId);
+$scope.partnerProfile = User.getProfile({id: $stateParams.partnerId});
+
 var ws = new WebSocket('ws://' + location.host + '/one2one');
+$scope.ws = ws;
+$scope.$on('$destroy', function() {
+  console.log('closing')
+  $scope.ws.close();
+})
 var videoInput;
 var videoOutput;
 var webRtcPeer;
@@ -22,27 +28,24 @@ function setCallState(nextState) {
   switch (nextState) {
   case NO_CALL:
     $('#call').attr('disabled', false);
-    $('#terminate').attr('disabled', true);
     break;
   case PROCESSING_CALL:
     $('#call').attr('disabled', true);
-    $('#terminate').attr('disabled', true);
     break;
   case IN_CALL:
-    $('#call').attr('disabled', true);
-    $('#terminate').attr('disabled', false);
+    var callBtn = $('#call');
+    callBtn.html('<span class="glyphicon glyphicon-stop"></span> End Call</a>');
+    callBtn.removeClass( "btn-success" ).addClass( "btn-danger" );
+    callBtn.attr('disabled', false);
     break;
   case DISABLED:
     $('#call').attr('disabled', true);
-    $('#terminate').attr('disabled', true);
-    break;
-  case IN_PLAY:
-    $('#call').attr('disabled', true);
-    $('#terminate').attr('disabled', false);
     break;
   case POST_CALL:
-    $('#call').attr('disabled', false);
-    $('#terminate').attr('disabled', true);
+    var callBtn = $('#call');
+    callBtn.html('<span class="glyphicon glyphicon-play"></span> Call</a>');
+    callBtn.removeClass('btn-danger').addClass('btn-success');
+    callBtn.attr('disabled', false);
     break;
   default:
     return;
@@ -56,10 +59,11 @@ function setCallState(nextState) {
   videoOutput = document.getElementById('videoOutput');
 
   document.getElementById('call').addEventListener('click', function() {
-    call();
-  });
-  document.getElementById('terminate').addEventListener('click', function() {
-    stop();
+    if(callState == IN_CALL) {
+      stop();
+    } else {
+      call();
+    }
   });
 
 window.onbeforeunload = function() {
@@ -164,7 +168,7 @@ function playResponse(message) {
 function incomingCall(message) {
   // If bussy just reject without disturbing user
 
-  if (callState != NO_CALL) {
+  if (callState != NO_CALL && callState != POST_CALL) {
     
     var response = {
       id : 'incomingCallResponse',
@@ -308,7 +312,6 @@ function call() {
 }
 
 function stop(message) {
-  var stopMessageId = (callState == IN_CALL) ? 'stop' : 'stopPlay';
   setCallState(POST_CALL);
   if (webRtcPeer) {
     webRtcPeer.dispose();
@@ -316,7 +319,7 @@ function stop(message) {
 
     if (!message) {
       var message = {
-        id : stopMessageId
+        id : 'stop'
       }
       sendMessage(message);
     }
