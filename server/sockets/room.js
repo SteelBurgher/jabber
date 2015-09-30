@@ -29,10 +29,11 @@ var candidatesQueue = {};
  */
 
 // Represents caller and callee sessions
-function UserSession(id, name, ws) {
+function UserSession(id, name, ws, partnerId) {
     this.id = id;
     this.name = name;
     this.ws = ws;
+    this.partnerId = partnerId;
     this.peer = null;
     this.sdpOffer = null;
 }
@@ -141,7 +142,7 @@ CallMediaPipeline.prototype.createPipeline = function(callerId, calleeId, ws, ca
                         partner: mongoose.Types.ObjectId(calleeId)
                         }, function(err, recording) {
                         if(err) { return handleError(res, err); }
-                        console.log('file://' + path.join(config.root, '/server/api/recording/uploads/' + recording._id + '.webm'));
+                        console.log('file://' + path.join(config.root, '/server/api/recording/uploads/' + recording._id + '.webm'));        
                         pipeline.create('RecorderEndpoint', {
                             uri: 'file://' + path.join(config.root, '/server/api/recording/uploads/' + recording._id + '.webm'),
                             mediaProfile: 'WEBM_AUDIO_ONLY'
@@ -388,7 +389,7 @@ module.exports = function (server) {
 
         ws.on('close', function() {
             console.log('Connection ' + sessionId + ' closed');
-            stop(sessionId);
+            stop(sessionId, true);
             userRegistry.unregister(sessionId);
         });
 
@@ -428,9 +429,13 @@ module.exports = function (server) {
 
             case 'setUserId':
                 sessionId = message.userId;
-                register(sessionId, message.name, ws);
+                register(sessionId, message.name, ws, message.partnerId);
                 break;
-            
+
+            case 'checkReady':
+                check(message.partnerId, ws);
+                break;
+
             default:
 
                 ws.send(JSON.stringify({
@@ -492,8 +497,19 @@ module.exports = function (server) {
 
     
 
-    function stop(sessionId) {
+    function stop(sessionId, leaving) {
         if (!pipelines[sessionId]) {
+            // if leaving room notify other user
+            if(leaving) {
+                var message = {
+                    id: 'userLeft'
+                }
+                var partner = userRegistry.getById(userRegistry.getById(sessionId).partnerId);
+                // if partner is online send leaving message
+                if(partner) {
+                    partner.sendMessage(message);
+                }
+            }
             return;
         }
 
@@ -507,11 +523,23 @@ module.exports = function (server) {
         if (stoppedUser) {
             stoppedUser.peer = null;
             delete pipelines[stoppedUser.id]; // session deleted from local storage
+            if(!leaving) {
+                var message = {
+                    id: 'stopCommunication',
+                    message: 'remote user ended call'
+                }
+                stoppedUser.sendMessage(message)
+            } 
+        }
+        if(leaving) {
             var message = {
-                id: 'stopCommunication',
-                message: 'remote user hanged out'
+                id: 'userLeft'
             }
-            stoppedUser.sendMessage(message)
+            var partner = userRegistry.getById(userRegistry.getById(sessionId).partnerId);
+                // if partner is online send leaving message
+            if(partner) {
+                partner.sendMessage(message);
+            }
         }
 
         clearCandidatesQueue(sessionId);
@@ -621,7 +649,7 @@ module.exports = function (server) {
         caller.sendMessage(message);
     }
 
-    function register(id, name, ws, callback) {
+    function register(id, name, ws, partnerId) {
         function onError(error) {
             ws.send(JSON.stringify({id:'registerResponse', response : 'rejected ', message: error}));
         }
@@ -634,13 +662,22 @@ module.exports = function (server) {
             return onError("User " + id + " is already registered");
         }
 
-        userRegistry.register(new UserSession(id, name, ws));
+        userRegistry.register(new UserSession(id, name, ws, partnerId));
         try {
             ws.send(JSON.stringify({id: 'registerResponse', response: 'accepted'}));
         } catch(exception) {
             onError(exception);
         }
     }
+
+    function check(partnerId, ws) {
+        // checks if partner is active 
+        var partner = userRegistry.getById(partnerId);
+        if(partner) {
+            ws.send(JSON.stringify({id: 'partnerReady'}));
+            partner.ws.send(JSON.stringify({id: 'partnerReady'}));
+        }
+    };
 
     function clearCandidatesQueue(sessionId) {
         if (candidatesQueue[sessionId]) {

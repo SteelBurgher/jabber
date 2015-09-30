@@ -4,13 +4,13 @@ angular.module('jabbrApp')
   .controller('RoomCtrl', function ($sce, $location, $stateParams, $scope, $state, Auth, Session, $http, User) {
 
 $scope.partnerProfile = User.getProfile({id: $stateParams.partnerId});
-
+$('#call').attr('disabled', true);
 var ws = new WebSocket('ws://' + location.host + '/one2one');
 $scope.ws = ws;
 $scope.$on('$destroy', function() {
   console.log('closing')
   $scope.ws.close();
-})
+});
 var videoInput;
 var videoOutput;
 var webRtcPeer;
@@ -23,14 +23,20 @@ const IN_CALL = 2;
 const DISABLED = 3;
 const IN_PLAY = 4;
 const POST_CALL = 5;
+const CALL_READY = 6;
 
 function setCallState(nextState) {
   switch (nextState) {
   case NO_CALL:
-    $('#call').attr('disabled', false);
+    var callBtn = $('#call');
+    callBtn.attr('disabled', true);
+    callBtn.html('<span class="glyphicon glyphicon-play"></span> Call</a>');
+    callBtn.removeClass('btn-danger').addClass('btn-success');
+    $('#callMessage').html(' - Not ready for call').css('color', 'red');
     break;
   case PROCESSING_CALL:
     $('#call').attr('disabled', true);
+    $('#callMessage').empty();
     break;
   case IN_CALL:
     var callBtn = $('#call');
@@ -43,10 +49,16 @@ function setCallState(nextState) {
     break;
   case POST_CALL:
     var callBtn = $('#call');
+    $('#callMessage').html(' - Ready for call').css('color', 'green');
     callBtn.html('<span class="glyphicon glyphicon-play"></span> Call</a>');
     callBtn.removeClass('btn-danger').addClass('btn-success');
     callBtn.attr('disabled', false);
     break;
+  case CALL_READY:
+    var $callMessage = $('#callMessage');
+    var $callBtn = $('#call');
+    $callMessage.html(' - Ready for call').css('color', 'green');
+    $callBtn.attr('disabled', false);
   default:
     return;
   }
@@ -100,12 +112,19 @@ ws.onmessage = function(message) {
   case 'playEnd':
     playEnd(parsedMessage);
     break;
+  case 'partnerReady':
+    setCallState(CALL_READY);
+    break;
   case 'open':
     sendMessage({
       id: 'setUserId',
       name: $scope.currentUser.name,
-      userId: $scope.currentUser._id
+      userId: $scope.currentUser._id,
+      partnerId: $stateParams.partnerId
     });
+    break;
+  case 'userLeft':
+    userLeft();
     break;
   default:
     console.error('Unrecognized message', parsedMessage);
@@ -116,6 +135,11 @@ function resgisterResponse(message) {
   if (message.response == 'accepted') {
     setCallState(NO_CALL);
     console.log("Successfully registered");
+    var checkMessage = {
+      id: "checkReady",
+      partnerId: $stateParams.partnerId
+    };
+    sendMessage(checkMessage);
   } else {
     var errorMessage = message.message ? message.message
         : 'Unknown reason for register rejection.';
@@ -310,6 +334,16 @@ function call() {
   });
 
 }
+
+function userLeft() {
+  setCallState(NO_CALL);
+  if (webRtcPeer) {
+    webRtcPeer.dispose();
+    webRtcPeer = null;
+  }
+  hideSpinner(videoInput, videoOutput);
+  document.getElementById('videoSmall').style.display = 'block';
+};
 
 function stop(message) {
   setCallState(POST_CALL);
