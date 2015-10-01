@@ -57,7 +57,7 @@ angular.module('jabbrApp')
     
     
     $scope.audioUrl = function(filename) {
-      return 'http://' + location.host + '/' + filename + '.webm';
+      return 'http://' + location.host + '/' + $scope.currentUser._id + '-' + filename + '.webm';
     };
 
 });
