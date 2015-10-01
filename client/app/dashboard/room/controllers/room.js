@@ -3,12 +3,35 @@
 angular.module('jabbrApp')
   .controller('RoomCtrl', function ($sce, $location, $stateParams, $scope, $state, Auth, Session, $http, User) {
 
+$scope.recording = false;
+$scope.startedRecording = false;
 $scope.partnerProfile = User.getProfile({id: $stateParams.partnerId});
 $('#call').attr('disabled', true);
+
 var ws = new WebSocket('ws://' + location.host + '/one2one');
+var recordBtn = $('#record');
+recordBtn.attr('disabled', true);
+recordBtn.on('click', function() {
+  if($scope.recording) {
+    $scope.recording = false;
+    sendMessage({
+      id: 'stopRecording'
+    });
+    recordBtn.removeClass('btn-warning').addClass('btn-primary').html('<span class="glyphicon glyphicon-record"></span> Record');
+  } else {
+     $scope.recording = true;
+     
+      sendMessage({
+        id: 'startRecording',
+        partnerId: $stateParams.partnerId
+      });
+      recordBtn.removeClass('btn-primary').addClass('btn-warning').html('<span class="glyphicon glyphicon-record"></span> Stop');
+    }
+});
+
 $scope.ws = ws;
 $scope.$on('$destroy', function() {
-  console.log('closing')
+  console.log('closing');
   $scope.ws.close();
 });
 var videoInput;
@@ -29,6 +52,8 @@ function setCallState(nextState) {
   switch (nextState) {
   case NO_CALL:
     var callBtn = $('#call');
+    recordBtn.attr('disabled', true);
+    recordBtn.removeClass('btn-warning').addClass('btn-primary').html('<span class="glyphicon glyphicon-record"></span> Record');
     callBtn.attr('disabled', true);
     callBtn.html('<span class="glyphicon glyphicon-play"></span> Call</a>');
     callBtn.removeClass('btn-danger').addClass('btn-success');
@@ -43,6 +68,7 @@ function setCallState(nextState) {
     callBtn.html('<span class="glyphicon glyphicon-stop"></span> End Call</a>');
     callBtn.removeClass( "btn-success" ).addClass( "btn-danger" );
     callBtn.attr('disabled', false);
+    recordBtn.attr('disabled', false);
     break;
   case DISABLED:
     $('#call').attr('disabled', true);
@@ -52,6 +78,8 @@ function setCallState(nextState) {
     $('#callMessage').html(' - Ready for call').css('color', 'green');
     callBtn.html('<span class="glyphicon glyphicon-play"></span> Call</a>');
     callBtn.removeClass('btn-danger').addClass('btn-success');
+    recordBtn.attr('disabled', true);
+    recordBtn.removeClass('btn-warning').addClass('btn-primary').html('<span class="glyphicon glyphicon-record"></span> Record');
     callBtn.attr('disabled', false);
     break;
   case CALL_READY:
